@@ -6,6 +6,8 @@ import requests
 import re
 import pickle
 import traceback
+import itertools
+import json
 from lxml import etree
 import time
 import datetime
@@ -60,29 +62,64 @@ def getUrl(url,domin):
         l1 = [domin+x for x in l2]
     return l1
 
-failpage = []
-failsubject = []
+def collectsubject():
+    failpage = []
+    failsubject = []
 
-with open('bgm.dat','wb') as f:
-    for i in range(1,205):
-        animelist = 'https://bangumi.tv/anime/browser?sort=rank&page=%d' % i
-        l = getUrl(animelist,'https://bangumi.tv')
-        if l:
-            ll = []
-            for j in l:
-                item = getItem(j)
-                if item:
-                    ll.append(item)
-                else:
-                    failsubject.append(item)
-            if ll != []:
-                pickle.dump(ll,f)
-        else:
-            failpage.append(animelist)
-        print('page %d is done'% i)
+    with open('bgm.dat','wb') as f:
+        for i in range(1,205):
+            animelist = 'https://bangumi.tv/anime/browser?sort=rank&page=%d' % i
+            l = getUrl(animelist,'https://bangumi.tv')
+            if l:
+                ll = []
+                for j in l:
+                    item = getItem(j)
+                    if item:
+                        ll.append(item)
+                    else:
+                        failsubject.append(item)
+                if ll != []:
+                    pickle.dump(ll,f)
+            else:
+                failpage.append(animelist)
+            print('page %d is done'% i)
 
-with open('failpage.txt','wb') as f:
-    pickle.dump(failpage,f)
+    with open('failpage.txt','wb') as f:
+        pickle.dump(failpage,f)
 
-with open('failsub.txt','wb') as f:
-    pickle.dump(failsubject,f)
+    with open('failsub.txt','wb') as f:
+        pickle.dump(failsubject,f)
+
+def collectUser(user):
+    combine = lambda x,y: [(x[i],y[i]) for i in range(0,len(x) if len(x)<=len(y) else len(y))]
+    currentuser = [user]#初始化用户id
+    page = 0
+    total = 1
+    url = 'https://bangumi.tv/anime/list/%d/collect'% (user)
+    while page <= total:
+        page += 1
+        try:
+            s = sess.get(url+'?page=%d'% page,headers=headers,timeout = 30)
+        except Exception:
+            traceback.print_exc()
+            continue
+        s.encoding = 'utf-8'
+        if page == 1:
+            watched = re.search(r'<span>看过\s*\((\d+)\)</span>',s.text)
+            itemcount = re.findall(r'<a href="/subject/(\d+)" class="l">',s.text)
+            if watched and itemcount:
+                watched = int(watched.group(1))
+                total = math.ceil(watched/len(itemcount))
+                url = s.url
+            else:
+                break
+        rate = re.findall(r'<a href="/subject/(\d+)" class="l">.+\n.+\n.+\n.+\n.+\n.+\n.+\n.+\n<span class="sstars([.\d]+) starsinfo">',s.text)
+        currentuser+=rate
+    return currentuser
+
+with open('bgmuser.dat','wb') as f:
+    for i in range(1,260000):
+        user = collectUser(i)
+        print(user)
+        if len(user)>1:
+            pickle.dump(user,f)

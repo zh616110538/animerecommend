@@ -17,7 +17,8 @@ def getAlltag(items):
                 l.append(i)
     return l
 
-zhuhao = [['100449',5],['211936',5],['230176',2],['225843',1]]
+zhuhao = [['100449',5],['211936',5],['230176',2],['225843',1],['236900',5],['110467',5],['79227',5],['126173',5],['5436',5]]
+#zhuhao = [['112146',5],['79227',5],['187276',4]]
 
 items = []
 
@@ -26,7 +27,11 @@ for item in alldata:
         if i[0] == item['id']:
             items.append(item)
 
-avg = (5+5+2+1)/4
+total = 0
+for x in zhuhao:
+    total+=x[1]
+avg = total/5/len(zhuhao)
+
 alltag = getAlltag(items)
 usertag = [0 for i in range(0,len(dic))]
 for i in alltag:
@@ -35,10 +40,10 @@ for i in alltag:
     for j in range(0,len(items)):
         if items[j]['tag'][i] > 0:
             count+=1
-            tagscore+=zhuhao[j][1]-avg
+            tagscore+=(zhuhao[j][1]/5-avg)
     tagscore = tagscore/count
     usertag[i] = tagscore
-# print(usertag)
+print(usertag)
 
 usertag = np.array([usertag])
 ll = []
@@ -50,5 +55,6 @@ def sim(s):
     return s['sim']
 ff = sorted(alldata,key = sim,reverse=True)
 for i in ff:
+    i['tag'] = None
     print(i)
     time.sleep(0.5)

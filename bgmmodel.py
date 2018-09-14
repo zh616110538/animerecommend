@@ -3,13 +3,13 @@
 import pickle
 import time
 def taglist(l):
-    dic = {}
-    redic = {}
-    count = 0
+    dic = {'AnimeScore':0}
+    redic = {'0':'AnimeScore'}
+    count = 1
     for i in l:
         for item in i:
             for tag in item['tag']:
-                if int(tag[1]) > 50:
+                if int(tag[1]) > 50 and  not '20' in tag[0]:
                     if not tag[0] in dic:
                         dic[tag[0]] = count
                         redic[count] = tag[0]
@@ -21,9 +21,11 @@ def genanimelist(dic,anilist):
     for bunch in anilist:
         for item in bunch:
             newtag = [0 for i in range(0,len(dic))]
+            newtag[0] = float(item['score'])/5
+            popularity = int(item['popularity'])
             for tag in item['tag']:
                 if tag[0] in dic:
-                    newtag[dic[tag[0]]] = int(tag[1])
+                    newtag[dic[tag[0]]] = int(tag[1])/popularity*10
             item['tag'] = newtag
             l.append(item)
     return l
@@ -41,6 +43,9 @@ with open('bgm.dat','rb')as f:
 
 dic,redic = taglist(l)
 all = genanimelist(dic,l)
+
+for i in dic:
+    print(i)
 # for i in all:
 #     print(i)
 #     time.sleep(0.2)
