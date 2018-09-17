@@ -7,6 +7,7 @@ import traceback
 import math
 import threading
 import time
+import os
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.146 Safari/537.36",
@@ -99,7 +100,7 @@ def collectUser(sess,user):
                 except Exception:
                     # traceback.print_exc()
                     sess.close()
-                    time.sleep(60)
+                    time.sleep(loop*60)
                     loop+=1
             if loop != 10:
                 print("fetch error")
@@ -120,19 +121,30 @@ def collectUser(sess,user):
 
 def collectUserToFile(file,start,end):
     sess = requests.session()
+    recordfile = re.sub(r'\.dat',r'.rcd',file)
+    if os.path.exists(recordfile):
+        with open(recordfile,'r') as f1:
+            start = int(f1.read())+1
     with open(file,'ab') as f:
         for i in range(start,end):#目前看来有440000的用户
             user = collectUser(sess,i)
             if len(user)>3:
-                print('Thread %s collectUser %d,stars anime %d' % (threading.current_thread().getName(), i, len(user) - 1))
+                print('Thread %s collectUser %d,stars anime %d...%d left' % (threading.current_thread().getName(), i, len(user) - 1,end-i))
                 pickle.dump(user,f)
+                with open(recordfile,'w') as f1:
+                    f1.write(str(i))
+        os.remove(recordfile)
 
 # threading.Thread(target=collectUser,args=('1-100000',1,100000))
 UserCount = 440000
 ThreadCount = 10
 threads = []
+path = 'userdata/'
+folder = os.path.exists(path)
+if not folder:  # 判断是否存在文件夹如果不存在则创建为文件夹
+    os.makedirs(path)
 for i in range(1,ThreadCount+1):
-    file = 'BangumiUser%d.dat' %(i)
+    file = 'userdata/BangumiUser%d.dat' %(i)
     start = int((i-1)*UserCount/ThreadCount +1)
     end = int(i*UserCount/ThreadCount)
     threads.append(threading.Thread(target=collectUserToFile,name=str(i),args=(file,start,end)))
