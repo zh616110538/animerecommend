@@ -125,6 +125,8 @@ def collectUserToFile(file,start,end):
     if os.path.exists(recordfile):
         with open(recordfile,'r') as f1:
             start = int(f1.read())+1
+    else:
+        return
     with open(file,'ab') as f:
         for i in range(start,end):#目前看来有440000的用户
             user = collectUser(sess,i)
